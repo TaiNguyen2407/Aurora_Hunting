@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Avatar, IconButton, TextInput} from 'react-native-paper';
-import {StyleSheet, FlatList, View, Platform} from 'react-native';
+import {StyleSheet, FlatList, View, Platform, Keyboard} from 'react-native';
 import {useComment, useTag, useUser} from '../hooks/ApiHooks';
 import PropTypes from 'prop-types';
 import {uploadsUrl} from '../utils/variables';
@@ -16,9 +16,19 @@ const Comment = ({route}) => {
   const [userAvatar, setUserAvatar] = useState('');
   const [submitButtonState, setSubmitButtonState] = useState(true);
   const [updateComment, setUpdateComment] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const {loadCommentsByFileId, postComments} = useComment();
   const {getUserByToken} = useUser();
   const {getFilesByTag} = useTag();
+
+  function onKeyboardDidShow(event) {
+    setKeyboardHeight(event.endCoordinates.height);
+  }
+
+  function onKeyboardDidHide(event) {
+    setKeyboardHeight(0);
+  }
 
   const loadComments = async () => {
     try {
@@ -66,6 +76,11 @@ const Comment = ({route}) => {
     loadCommentAvatar();
   }, [updateComment]);
 
+  useEffect(() => {
+    Keyboard.addListener('keyboardDidShow', onKeyboardDidShow);
+    Keyboard.addListener('keyboardDidHide', onKeyboardDidHide);
+  }, []);
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -77,8 +92,16 @@ const Comment = ({route}) => {
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={({position: 'relative'}, focus && {flex: 1})}
       >
-        <View style={styles.addContainer}>
+        <View
+          style={
+            (focus
+              ? {position: 'absolute', bottom: keyboardHeight}
+              : {bottom: 0},
+            styles.addContainer)
+          }
+        >
           <Avatar.Image
             source={{
               uri: userAvatar
@@ -90,8 +113,17 @@ const Comment = ({route}) => {
             mode="flat"
             placeholder="add comment..."
             value={comment}
-            style={{width: '60%', alignSelf: 'center', marginHorizontal: 10}}
+            multiline
             onChangeText={handleChange}
+            onFocus={() => {
+              console.log('is focused');
+              setFocus(true);
+            }}
+            onBlur={() => {
+              console.log('lost focus');
+              setFocus(false);
+            }}
+            style={styles.commentInput}
           />
 
           <IconButton
@@ -122,6 +154,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     backgroundColor: 'black',
+    position: 'relative',
+  },
+  commentInput: {
+    width: '60%',
+    alignSelf: 'center',
+    marginHorizontal: 10,
   },
 });
 
