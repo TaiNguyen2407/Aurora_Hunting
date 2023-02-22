@@ -116,11 +116,9 @@ const Comment = ({route}) => {
             multiline
             onChangeText={handleChange}
             onFocus={() => {
-              console.log('is focused');
               setFocus(true);
             }}
             onBlur={() => {
-              console.log('lost focus');
               setFocus(false);
             }}
             style={styles.commentInput}
